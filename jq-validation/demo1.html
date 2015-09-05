@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>
+		jquery Validation 插件
+	</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" type="text/css" href="style.css">
+
+</head>
+<body>
+<form id="demoForm">
+    <fieldset>
+        <legend>用户登录</legend>
+        <p id="info"></p>
+
+        <p>
+            <label for="username">用户名</label>
+            <input type="text" id="username" name="username" class="txt" />
+        </p>
+
+        <p>
+            <label for="email">邮箱</label>
+            <input type="text" id="email" name="email" class="txt"/>
+        </p>
+
+        <p>
+            <label for="password">密码</label>
+            <input type="password" id="password" name="password" class="txt"/>
+        </p>
+
+        <p>
+            <label for="confirm-password">确认密码</label>
+            <input type="password" id="confirm-password" name="confirm-password" class="txt"/>
+        </p>
+
+        <p>
+            <input type="submit" value="登录"/>
+        </p>
+
+        <p>
+            <button id="check">检查表单</button>
+        </p>
+    </fieldset>
+</form>
+
+<script type="text/javascript" src="js/jquery-1.11.2.js"></script>	
+<script type="text/javascript" src="js/jquery.validate-1.13.1.js"></script> 
+
+<script type="text/javascript">
+ var validator
+	$(document).ready(function(){
+		validator=$("#demoForm").validate({
+			debug: true,//debug为true是，表单不会提交，只会检查，方便调试
+			rules: {
+				username: {//username对应name中的username
+					/*required: true,//必填*/
+					required:{
+                       depends:function(){
+                       	return $("#password").is(":filled");
+                       }
+					},
+					minlength: {
+						param: 2,
+						depends:function(){
+							return $("#password").is(":filled");
+						}
+					},
+					maxlength: 10,
+					//rangelength: [2,10],
+					postcode: "中国",//自定义验证方法
+					remote: {
+						url: "remote.json",
+						type: "post",
+						data:{
+							loginTime: function (){
+								return +new Date;
+							}
+						}
+					}
+				},
+				email: {
+                    required: true,
+                    email: true
+                    //url: true
+                    //date: true
+                    //dateISO: true//格式一定为yyyy-mm-dd或者yyyy/mm/dd
+                    //number: true
+                    //digits: true
+				},
+			    password: {//password对应name中的password
+			    	required: true,
+			    	minlength: 3,
+			    	maxlength: 6
+			    },
+			    "confirm-password": {
+			    	required: true,
+			    	equalTo:"#password"
+			    }
+			},
+			messages: {
+				username: {
+					required: "必须填写用户名",
+					minlength: "用户名不能小于2个字符",
+					maxlength: "用户名不能超过10个字符"
+					//rangelength: "用户字符在2到10之间"
+				},
+				email: {
+					required: "必须填写邮箱地址",
+					email: "邮箱地址不正确"
+					//url: "url地址不正确"
+					//date: "日期不正确"
+					//dateISO: "dateISO格式不正确"
+					//number: "此字符串不是数字（小数/整数/负数等）"
+					//digits: "此数值不是非负整数"
+				},
+			    password: {
+			    	required: "必须填写密码",
+			    	minlength: "密码不能小于3个字符",
+			    	maxlength: "密码不能超过6个字符"
+			    },
+			    "confirm-password": {
+			    	required: "必须填写密码",
+			    	equalTo: "输入密码不一致"
+			    }
+			},
+			submitHandler:function(form){
+				console.log($(form).serialize());
+			},
+			highlight:function(element,errorClass,validClass){
+                $(element).addClass(errorClass).removeClass(validClass);
+                $(element).fadeOut().fadeIn();
+			},//highlight可以给未通过验证的input元素加效果
+			unhighlight:function(element,errorClass,validClass){
+                $(element).addClass(validClass).removeClass(errorClass);
+			},//unhighight除去通过验证的input元素的效果
+			/*focusInvalid: true,//提交表单时，没通过验证的表单，会获得焦点*/
+			/*onsubmit: false,//提交时不验证*/
+			/*errorClass: "wronge",//错误提示的css类名*/
+			/*validClass: "right",//通过验证的css类名*/
+			/*success: "right",//要验证的元素通过验证后的动作*/
+			groups:{
+				login:"username password confirm-password"
+			},
+			errorPlacement:function(error,element){
+				error.insertBefore("#info");
+			}//gtoups和errorPlacement设置固定区域显示错误信息
+			/*errorContainer: "#info",//显示或隐藏检验信息，可以自动实现错误信息出现时把容器属性变为显示，无错误时隐藏
+			errorLabelContainer: "#info",//吧错误信息统一放在一个容器中
+			errorElement: "li",//使用什么标签标记错误
+			wrapper: "ul"//使用什么标签把边上的errorElement包起来*/
+			/*invalidHandler:function(event,validator){
+				console.log("错误数" +validator.numberOfInvalids());
+			}*/
+		});
+        $.validator.addMethod("postcode",function(value,element,params){
+        	var postcode=/^[0-9]{6}$/;
+        	console.log(params);
+        	return this.optional(element) || (postcode.test(value));
+        },$.validator.format("请填写正确的{0}邮政编码"));//自定义验证方法
+        
+        $("#demoForm").on("invalid-form",function(event,validator){
+				console.log("错误数" +validator.numberOfInvalids());
+			})
+
+        $("#check").click(function(){
+          alert($("#demoForm").valid()?"填写正确！":"填写不正确！")
+        });
+	});
+</script>
+
+<!--<script type="text/javascript">
+ var validator
+	$(document).ready(function(){
+		$.validator.setDefaults({
+			debug: true
+		});//修改插件的默认设置
+		validator=$("#demoForm").validate({
+			/*debug: true,//debug为true是，表单不会提交，只会检查，方便调试*/
+			rules: {
+				username: {//username对应name中的username
+					/*required: true,//必填*/
+					//minlength: 2,
+					//maxlength: 10,
+					rangelength: [2,10],
+					remote: {
+						url: "remote.json",
+						type: "post",
+						data:{
+							loginTime: function (){
+								return +new Date;
+							}
+						}
+					}
+				},
+				email: {
+                    //required: true,
+                    email: true
+                    //url: true
+                    //date: true
+                    //dateISO: true//格式一定为yyyy-mm-dd或者yyyy/mm/dd
+                    //number: true
+                    //digits: true
+				},
+			    password: {//password对应name中的password
+			    	//required: true,
+			    	minlength: 3,
+			    	maxlength: 6
+			    },
+			    "confirm-password": {
+			    	//required: true,
+			    	equalTo:"#password"
+			    }
+			},
+			messages: {
+				username: {
+					required: "必须填写用户名",
+					//minlength: "用户名不能小于2个字符",
+					//maxlength: "用户名不能超过10个字符"
+					rangelength: "用户字符在2到10之间"
+				},
+				email: {
+					required: "必须填写邮箱地址",
+					email: "邮箱地址不正确"
+					//url: "url地址不正确"
+					//date: "日期不正确"
+					//dateISO: "dateISO格式不正确"
+					//number: "此字符串不是数字（小数/整数/负数等）"
+					//digits: "此数值不是非负整数"
+				},
+			    password: {
+			    	required: "必须填写密码",
+			    	minlength: "密码不能小于3个字符",
+			    	maxlength: "密码不能超过6个字符"
+			    },
+			    "confirm-password": {
+			    	required: "必须填写密码",
+			    	equalTo: "输入密码不一致"
+			    }
+			}
+		});
+        $.validator.addClassRules({
+        	txt: {
+        		required: true
+        	}
+        });
+
+        $("#check").click(function(){
+          alert($("#demoForm").valid()?"填写正确！":"填写不正确！")
+        });
+	});
+</script>-->
+</body>
+</html>
